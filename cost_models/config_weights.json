@@ -1,0 +1,88 @@
+{
+  "weight_profiles": {
+    "default_composite": {
+      "description": "Default balanced profile for general use cases",
+      "weights": {
+        "CU": 0.35,
+        "EU": 0.25,
+        "CO2": 0.25,
+        "$": 0.15
+      },
+      "comments": {
+        "CU": "Computational cost weight",
+        "EU": "Energy weight",
+        "CO2": "Environmental weight",
+        "$": "Monetary weight"
+      }
+    },
+    "research": {
+      "description": "Research/Academic - focused on performance with environmental awareness",
+      "weights": {
+        "CU": 0.40,
+        "EU": 0.30,
+        "CO2": 0.25,
+        "$": 0.05
+      },
+      "comments": {
+        "CU": "Performance is the most important",
+        "EU": "Energy is important",
+        "CO2": "Environment is important",
+        "$": "Cost is minimal"
+      }
+    },
+    "commercial": {
+      "description": "Commercial Cloud - balanced approach with cost consideration",
+      "weights": {
+        "CU": 0.30,
+        "EU": 0.20,
+        "CO2": 0.20,
+        "$": 0.30
+      },
+      "comments": {
+        "CU": "Performance is important",
+        "EU": "Energy is a medium priority",
+        "CO2": "Environment is a medium priority",
+        "$": "Cost is a high priority"
+      }
+    },
+    "mobile": {
+      "description": "Mobile/IoT - optimized for energy efficiency and battery life",
+      "weights": {
+        "CU": 0.25,
+        "EU": 0.50,
+        "CO2": 0.15,
+        "$": 0.10
+      },
+      "comments": {
+        "CU": "Performance is important, but not critical",
+        "EU": "Energy is the top priority",
+        "CO2": "Environment is a medium priority",
+        "$": "Cost is a low priority"
+      }
+    },
+    "hpc": {
+      "description": "High Performance Computing - optimized for maximum computational throughput",
+      "weights": {
+        "CU": 0.50,
+        "EU": 0.30,
+        "CO2": 0.15,
+        "$": 0.05
+      },
+      "comments": {
+        "CU": "Productivity is the most important",
+        "EU": "Energy is the second priority",
+        "CO2": "Environment is important, but not critical",
+        "$": "Cost is less important"
+      }
+    }
+  },
+  "reference_values": {
+    "description": "Reference values for normalization (can be calibrated based on benchmark suite)",
+    "values": {
+      "CU": {"min": 1.0, "max": 1000.0, "typical": 100.0},
+      "EU": {"min": 0.0001, "max": 10.0, "typical": 1.0},
+      "CO2": {"min": 0.00001, "max": 1.0, "typical": 0.1},
+      "$": {"min": 0.000001, "max": 0.1, "typical": 0.01}
+    }
+  }
+}

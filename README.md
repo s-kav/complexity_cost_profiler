@@ -1,0 +1,179 @@
+Of course. Here is a comprehensive project description in Markdown format, based on the code and features we have developed.
+
+---
+
+# Complexity Cost Profiler
+
+CostComplexityProfiler: Advanced Algorithmic Complexity Assessment Model with Unified Composite Score.
+A sophisticated static analysis tool designed to evaluate the "cost" of software projects across multiple dimensions beyond traditional time complexity.
+
+## The Core Problem
+
+Traditional algorithm analysis, often limited to Big O notation, is abstract and fails to capture critical real-world operational costs. In modern software development, factors like energy consumption (for mobile/IoT), cloud infrastructure expenses, and environmental impact are crucial considerations.
+
+The **Complexity Cost Profiler** addresses this gap by providing a multi-faceted cost assessment, allowing developers and managers to make more informed decisions based on a holistic view of software efficiency.
+
+## Purpose 
+
+This enhanced prototype implements a Python utility for evaluating computational "cost" of algorithms considering processor architectural features (CPU/ARM/GPU), energy consumption metrics and the ability to translate costs into monetary equivalent. Now includes a unified composite score based on scaled normalization of 4 main metrics and 5 profiles.
+
+## Key Features
+
+-   **Multi-Dimensional Analysis**: Evaluates code based on four key metrics:
+    -   **CU (Computational Units)**: Abstract measure of computational effort.
+    -   **EU (Energy Units)**: Estimated energy consumption.
+    -   **CO2 (CO2 Units)**: Estimated carbon footprint.
+    -   **$ (Monetary Units)**: Estimated monetary cost for execution (e.g., in a cloud environment).
+-   **Composite Score**: Combines the four core metrics into a single, unified score (0-100) for easy, high-level comparison. A higher score indicates better overall efficiency.
+-   **Analysis Profiles**: Applies different weighting schemes to the metrics, allowing for cost assessment tailored to specific deployment targets:
+    -   `HPC`: Prioritizes computational performance (CU).
+    -   `MOBILE`: Prioritizes energy efficiency (EU).
+    -   `COMMERCIAL`: Balances performance with monetary cost ($).
+    -   `RESEARCH`: Focuses on performance while being mindful of environmental impact.
+    -   `DEFAULT`: A balanced profile for general use.
+-   **Automated Repository Analysis**: Can clone one or more Git repositories, automatically discover source files (`.py`, `.ll`, `.ptx`), and perform a comprehensive analysis.
+-   **Extensible Cost Models**: Instruction costs for different architectures (e.g., `x86_64`) are defined in simple JSON files, making the system easy to extend and calibrate.
+-   **Rich Visualizations**: Generates insightful charts to visually compare the efficiency of different algorithms or repositories.
+
+## How It Works
+
+The profiler follows a systematic pipeline for each analysis:
+
+1.  **Code Acquisition**: Clones a Git repository or targets local source files.
+2.  **Disassembly**: Statically analyzes source files, breaking down functions and methods into fundamental instructions (e.g., Python bytecode).
+3.  **Cost Aggregation**: For each instruction, it looks up the corresponding costs (CU, EU, CO2, $) from an architecture-specific JSON model. These costs are summed up for the entire codebase.
+4.  **Normalization & Scoring**: The aggregated raw costs are normalized to a 0-100 scale. Using the weights from a selected **Profile**, it calculates the final **Composite Score**.
+5.  **Reporting**: Generates detailed summary tables and comparison charts to present the findings.
+
+## Formulas: Computational Cost Analysis Framework
+
+### Variable Definitions
+
+Let:
+- `op_i`: number of instructions of type `i`
+- `w_i`: weight (cost) of instruction `i` in CU
+- `f_e(i)`: energy consumption of instruction `i` (in Joules)
+- `f_c(i)`: CO₂ footprint (kg CO₂)
+- `f_d(i)`: monetary cost of executing instruction `i` ($)
+
+### Total Cost Calculations
+
+#### Computational Units
+```
+COST_total = ∑(op_i × w_i)       [in CU]
+```
+
+#### Energy Consumption
+```
+ENERGY_total = ∑(op_i × f_e(i))  [in Joules]
+```
+
+#### Carbon Footprint
+```
+CO2_total = ∑(op_i × f_c(i))     [in kg CO₂]
+```
+
+#### Monetary Cost
+```
+MONEY_total = ∑(op_i × f_d(i))   [in $ or €]
+```
+
+### Composite Score Formula
+
+Let `S_cu`, `S_eu`, `S_co2`, `S_$` be normalized scores (0-100) for each metric.
+
+
+Then:
+```
+COMPOSITE_SCORE = α×S_cu + β×S_eu + γ×S_co2 + δ×S_$
+```
+
+**Constraint:**
+```
+α + β + γ + δ = 1 (configurable weights)
+```
+
+---
+
+*Note: All weights (α, β, γ, δ) are user-configurable to prioritize different optimization objectives.*
+
+## Usage Example
+
+The tool is designed to be run from a script. The main workflow involves defining a list of target repositories and launching the analysis loop.
+
+```python
+# --- Main execution loop for multiple repositories ---
+from IPython.display import display, Image # For displaying charts in notebooks
+import subprocess
+
+# 1. Define target repositories
+REPO_URLS = [
+    "https://github.com/s-kav/ds_tools.git",
+    "https://github.com/s-kav/kz_data_imputation.git",
+]
+
+all_repo_data = {} # Dictionary to store results for each repo
+
+# 2. Loop through repositories, analyze, and store results
+for repo_url in REPO_URLS:
+    local_repo_path = repo_url.split('/')[-1].replace('.git', '')
+
+    if not os.path.isdir(local_repo_path):
+        subprocess.run(['git', 'clone', repo_url], capture_output=True, text=True)
+
+    # Analyze the repository in "quiet" mode
+    repository_df = analyze_repository(
+        repo_path=local_repo_path,
+        detected_arch="x86_64", # Example architecture
+        verbose=False 
+    )
+    
+    if not repository_df.empty:
+        repository_df.set_index('PROFILE NAME', inplace=True)
+        all_repo_data[local_repo_path] = repository_df # Store the DataFrame
+        
+        # Display the summary table for the current repository
+        print(f"\n[Analysis] Aggregated assessment for repository: '{local_repo_path}'")
+        display(repository_df.style.format("{:.2f}"))
+
+# 3. Generate and display the final comparison chart
+if all_repo_data:
+    print("\n[Chart] Generating summary comparison chart for all repositories...")
+    summary_chart_filepath = os.path.join("./enhanced_reports", "repository_comparison_summary.png")
+    
+    create_repository_comparison_chart(
+        repo_data=all_repo_data,
+        output_filepath=summary_chart_filepath,
+        profile_to_plot="TOTAL" # Use the 'TOTAL' row for comparison
+    )
+
+    print("[Chart] Displaying generated chart...")
+    display(Image(filename=summary_chart_filepath))
+```
+
+## Example Output
+
+The analysis of each repository produces a detailed table showing its performance from the perspective of each profile.
+
+**[Analysis] Aggregated assessment for repository: 'kz_data_imputation'**
+| PROFILE NAME | File Type | Function Name | COMPOSITE_SCORE | SCORE_GRADE | CU | EU | CO2 | $ |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| RESEARCH | Python (12) | 89 | 42.23 | D | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| COMMERCIAL | Python (12) | 89 | 30.24 | F | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| MOBILE | Python (12) | 89 | 53.76 | C- | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| HPC | Python (12) | 89 | 36.00 | F | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| DEFAULT | Python (12) | 89 | 37.79 | F | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| TOTAL | All Files (12) | 89 | 40.00 | D | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+
+Finally, a summary chart is generated to compare all analyzed repositories at a glance.
+
+**[Chart] Displaying generated chart...**
+
+![Repository Comparison Chart](./enhanced_reports/repository_comparison_summary.png)
+
+## Future Roadmap
+
+-   **CI/CD Integration**: Develop a GitHub Action to run the profiler on pull requests and report on potential efficiency regressions.
+-   **Expanded Language Support**: Add analyzers for other languages like C++, Java, and JavaScript.
+-   **Hardware-Based Calibration**: Create tools to generate more accurate cost models by profiling instruction costs on real hardware.
+-   **Web Dashboard**: Build a web-based UI to visualize historical analysis data and track project efficiency over time.

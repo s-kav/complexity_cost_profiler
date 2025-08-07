@@ -1,0 +1,36 @@
+.version 7.0
+.target sm_52
+.address_size 64
+
+.visible .func ptxTestFunc(
+    .param .u64 dst,
+    .param .u64 src)
+{
+    .reg .s32 %r<3>;
+    .reg .u64 dstPtr, srcPtr, offset;
+
+    mov.u32 %r0, %ctaid.x;
+    mov.u32 %r1, %ntid.x;
+    mov.u32 %r2, %tid.x;
+
+    ld.param.u64 dstPtr, [dst];
+
+    // %r0 = %ctaid.x * %ntid.x + %tid.x (global thread ID)
+    mad.lo.u32 %r0, %r0, %r1, %r2;
+
+    ld.param.u64 srcPtr, [src];
+
+    shl.b32 %r0, %r0, 2;
+
+    mov.b64 offset, {%r0, 0};
+
+    add.u64 dstPtr, dstPtr, offset;
+    add.u64 srcPtr, srcPtr, offset;
+
+    ld.global.s32 %r0, [dstPtr];
+    ld.global.s32 %r1, [srcPtr];
+
+    add.s32 %r0, %r0, %r1;
+    st.global.s32 [dstPtr], %r0;
+}
+
