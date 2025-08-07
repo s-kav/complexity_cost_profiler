@@ -198,6 +198,20 @@ else:
 
 ![Repository Comparison Chart](./results/repository_comparison_summary_10_repos.png)
 
+# References
+
+For citing you should use:
+
+Sergii Kavun. (2025). s-kav/complexity_cost_profiler: version 1.0 (v.1.0). Zenodo. https://doi.org/10.5281/zenodo.16761183
+
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16761183.svg)](https://doi.org/10.5281/zenodo.16761183)
+
+
+# License
+
+This project is licensed under the Apache-2.0 license - see the [LICENSE](https://github.com/s-kav/complexity_cost_profiler/blob/main/LICENSE) file for details.
+
+
 ## Future Roadmap
 
 -   **CI/CD Integration**: Develop a GitHub Action to run the profiler on pull requests and report on potential efficiency regressions.
