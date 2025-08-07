@@ -1,6 +1,3 @@
-Of course. Here is a comprehensive project description in Markdown format, based on the code and features we have developed.
-
----
 
 # Complexity Cost Profiler
 
@@ -169,7 +166,7 @@ Finally, a summary chart is generated to compare all analyzed repositories at a 
 
 **[Chart] Displaying generated chart...**
 
-![Repository Comparison Chart](./enhanced_reports/repository_comparison_summary.png)
+![Repository Comparison Chart](./results/repository_comparison_summary_10_repos.png)
 
 ## Future Roadmap
 
