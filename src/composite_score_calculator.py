@@ -38,6 +38,7 @@ def load_configuration(config_file: str = DEFAULT_CONFIG_WEIGHTS_PATH) -> tuple:
         COMMERCIAL_WEIGHTS = extract_weights(weight_profiles['commercial'])
         MOBILE_WEIGHTS = extract_weights(weight_profiles['mobile'])
         HPC_WEIGHTS = extract_weights(weight_profiles['hpc'])
+        MIXED_PRECISION_WEIGHTS = extract_weights(weight_profiles.get('mixed_precision', weight_profiles['hpc']))
         
         reference_data = config_data['reference_values']
         REFERENCE_VALUES = reference_data.get('values', reference_data)
@@ -48,7 +49,8 @@ def load_configuration(config_file: str = DEFAULT_CONFIG_WEIGHTS_PATH) -> tuple:
             COMMERCIAL_WEIGHTS,
             MOBILE_WEIGHTS,
             HPC_WEIGHTS,
-            REFERENCE_VALUES
+            REFERENCE_VALUES,
+            MIXED_PRECISION_WEIGHTS
         )
         
     except FileNotFoundError:
@@ -59,8 +61,9 @@ def load_configuration(config_file: str = DEFAULT_CONFIG_WEIGHTS_PATH) -> tuple:
         raise KeyError(f"Missing required configuration key in '{config_file}': {e}")
 
 # --- Load configuration at module startup ---
-(DEFAULT_COMPOSITE_WEIGHTS, RESEARCH_WEIGHTS, COMMERCIAL_WEIGHTS, 
-  MOBILE_WEIGHTS, HPC_WEIGHTS, REFERENCE_VALUES) = load_configuration()
+(DEFAULT_COMPOSITE_WEIGHTS, RESEARCH_WEIGHTS, COMMERCIAL_WEIGHTS,
+ MOBILE_WEIGHTS, HPC_WEIGHTS, REFERENCE_VALUES,
+ MIXED_PRECISION_WEIGHTS) = load_configuration()
 
 # Create the final mapping that the CompositeScoreCalculator will use
 PROFILE_WEIGHTS = MappingProxyType({
@@ -68,6 +71,7 @@ PROFILE_WEIGHTS = MappingProxyType({
     "COMMERCIAL": COMMERCIAL_WEIGHTS,
     "MOBILE": MOBILE_WEIGHTS,
     "HPC": HPC_WEIGHTS,
+    "MIXED_PRECISION": MIXED_PRECISION_WEIGHTS,
     "DEFAULT": DEFAULT_COMPOSITE_WEIGHTS,
 })
 
@@ -190,8 +194,9 @@ class CompositeScoreCalculator:
             "MOBILE": "Mobile/IoT - optimized for energy efficiency and battery life",
             "COMMERCIAL": "Commercial Cloud - balanced approach with cost consideration",
             "RESEARCH": "Research/Academic - focused on performance with environmental awareness",
+            "MIXED_PRECISION": "Mixed-Precision HPC - selects optimal precision format (FP64/FP32/FP16/INT8)",
             "DEFAULT": "Default balanced profile for general use cases",
-            "CUSTOM": "Custom weight configuration"
+            "CUSTOM": "Custom weight configuration",
         }
         return descriptions.get(self.profile, "Custom profile configuration")
 
@@ -214,6 +219,7 @@ class WeightConfiguration:
         self.COMMERCIAL_WEIGHTS = profiles['commercial']
         self.MOBILE_WEIGHTS = profiles['mobile']
         self.HPC_WEIGHTS = profiles['hpc']
+        self.MIXED_PRECISION_WEIGHTS = profiles.get('mixed_precision', profiles['hpc'])
         self.REFERENCE_VALUES = config_data['reference_values']
     
     def get_profile(self, profile_name: str) -> Dict[str, float]:
@@ -223,7 +229,8 @@ class WeightConfiguration:
             'research': self.RESEARCH_WEIGHTS,
             'commercial': self.COMMERCIAL_WEIGHTS,
             'mobile': self.MOBILE_WEIGHTS,
-            'hpc': self.HPC_WEIGHTS
+            'hpc': self.HPC_WEIGHTS,
+            'mixed_precision': self.MIXED_PRECISION_WEIGHTS,
         }
         
         if profile_name not in profile_mapping:

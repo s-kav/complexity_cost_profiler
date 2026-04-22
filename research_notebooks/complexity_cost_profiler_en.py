@@ -42,7 +42,6 @@ import math
 import os
 import platform
 import statistics
-import subprocess
 from typing import Dict, Tuple, Callable, Any, Optional, List
 from types import MappingProxyType
 
@@ -921,14 +920,14 @@ def main() -> None:
     result_linear = analyzer.analyze_function(algorithm_linear)
     result_constant = analyzer.analyze_function(algorithm_constant)
     
-    print(f"\n[Analysis] Linear Algorithm Assessment:")
+    print("\n[Analysis] Linear Algorithm Assessment:")
     for key, value in result_linear.items():
         if isinstance(value, (int, float)):
             print(f"  {key}: {value:.6f}")
         else:
             print(f"  {key}: {value}")
     
-    print(f"\n[Analysis] Constant Algorithm Assessment:")
+    print("\n[Analysis] Constant Algorithm Assessment:")
     for key, value in result_constant.items():
         if isinstance(value, (int, float)):
             print(f"  {key}: {value:.6f}")
@@ -936,18 +935,18 @@ def main() -> None:
             print(f"  {key}: {value}")
 
     # Detailed function comparison
-    print(f"\n[Comparison] Detailed Algorithm Comparison:")
+    print("\n[Comparison] Detailed Algorithm Comparison:")
     comparison = analyzer.compare_functions(algorithm_linear, algorithm_constant)
     
-    print(f"  Original Algorithm:")
+    print("  Original Algorithm:")
     print(f"    Composite Score: {comparison['old_metrics']['COMPOSITE_SCORE']:.2f} ({comparison['old_metrics']['SCORE_GRADE']})")
     print(f"    Efficiency Rating: {comparison['old_metrics']['EFFICIENCY_RATING']}")
     
-    print(f"  Optimized Algorithm:")
+    print("  Optimized Algorithm:")
     print(f"    Composite Score: {comparison['new_metrics']['COMPOSITE_SCORE']:.2f} ({comparison['new_metrics']['SCORE_GRADE']})")
     print(f"    Efficiency Rating: {comparison['new_metrics']['EFFICIENCY_RATING']}")
     
-    print(f"  Improvement Analysis:")
+    print("  Improvement Analysis:")
     print(f"    Score Improvement: {comparison['comparison']['COMPOSITE_SCORE_diff']:.2f} points")
     print(f"    Better Algorithm: {'Yes' if comparison['comparison']['improvement'] else 'No'}")
     
@@ -956,7 +955,7 @@ def main() -> None:
         print(f"    {metric} Change: {change:.1f}%")
 
     # Benchmark suite analysis
-    print(f"\n[Benchmark] Running Algorithm Suite Analysis:")
+    print("\n[Benchmark] Running Algorithm Suite Analysis:")
     
     algorithms_suite = [
         ("Linear_O(n)", algorithm_linear),
@@ -974,12 +973,12 @@ def main() -> None:
     print(f"  Performance Range: {benchmark_results['statistics']['score_range']:.2f} points")
 
     # Updated reference values after benchmarking
-    print(f"\n[Calibration] Updated Reference Values:")
+    print("\n[Calibration] Updated Reference Values:")
     for metric, refs in benchmark_results['updated_references'].items():
         print(f"  {metric}: min={refs['min']:.6f}, max={refs['max']:.6f}, typical={refs['typical']:.6f}")
 
     # Profile comparison example
-    print(f"\n[Profile Comparison] Testing different profiles:")
+    print("\n[Profile Comparison] Testing different profiles:")
     profiles_to_test = ["HPC", "MOBILE", "COMMERCIAL"]
     for test_profile in profiles_to_test:
         test_analyzer = EnhancedCostAnalyzer(arch=detected_arch, profile=test_profile)
@@ -1045,13 +1044,13 @@ def main() -> None:
         json.dump(summary_report, f, indent=4)
 
     print(f"\n[Complete] Enhanced reports saved to '{report_dir}' directory")
-    print(f"[Complete] Generated files:")
-    print(f"  - Individual algorithm assessments (CSV)")
-    print(f"  - Detailed comparison analysis (JSON)")
-    print(f"  - Benchmark suite results (JSON)")
-    print(f"  - Enhanced comparison charts (PNG)")
-    print(f"  - Benchmark summary visualization (PNG)")
-    print(f"  - Comprehensive summary report (JSON)")
+    print("[Complete] Generated files:")
+    print("  - Individual algorithm assessments (CSV)")
+    print("  - Detailed comparison analysis (JSON)")
+    print("  - Benchmark suite results (JSON)")
+    print("  - Enhanced comparison charts (PNG)")
+    print("  - Benchmark summary visualization (PNG)")
+    print("  - Comprehensive summary report (JSON)")
 
 
 def generate_recommendations(

@@ -3,7 +3,6 @@
 import platform
 import os
 import subprocess
-import shutil
 
 import utils as u
 

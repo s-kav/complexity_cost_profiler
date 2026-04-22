@@ -1,18 +1,18 @@
-# enhanced_cost_analyzer.py
+# complexity_cost_profiler/src/enhanced_cost_analyzer.py
 
 import os
 import dis
 import copy
 import inspect
 import importlib.util
-import platform
 import statistics
 import requests
 from typing import Dict, Tuple, Callable, Any, Optional, List
-
-# Import from our other project modules
 from instruction_cost_model import InstructionCostModel
 from composite_score_calculator import CompositeScoreCalculator, PROFILE_WEIGHTS, DEFAULT_COMPOSITE_WEIGHTS
+from precision_accuracy_model import PrecisionAccuracyModel, SUPPORTED_PRECISIONS
+
+# Import from our other project modules
 
 # Constants used specifically by the analyzer
 CARBON_INTENSITY_API = "https://api.carbonintensity.org.uk/intensity"
@@ -213,3 +213,154 @@ class EnhancedCostAnalyzer:
             return [{'Source File': os.path.basename(file_path), 'Function Name': f'[Error: {e}]'}]
             
         return all_executable_results
+
+# ------------------------------------------------------------------
+# Precision-aware analysis
+# ------------------------------------------------------------------
+
+    def analyze_function_with_precision(
+        self,
+        fn: Callable[..., Any],
+        precision: str,
+        include_composite: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Analyse *fn* and scale the resulting metrics to *precision*.
+
+        The bytecode analysis is always done in the same way; the precision
+        model then adjusts CU/EU/CO2/$ according to the target hardware
+        throughput ratios (NVIDIA A100 baseline).
+
+        Args:
+            fn:                Python callable to analyse.
+            precision:         Target precision: 'FP64', 'FP32', 'BF16',
+                               'FP16', or 'INT8'.
+            include_composite: Whether to append composite score fields.
+
+        Returns:
+            Dict with adjusted metrics plus ``PRECISION``, ``machine_epsilon``,
+            ``max_relative_error``, and ``dynamic_range_decades`` keys.
+        """
+        if precision not in SUPPORTED_PRECISIONS:
+            raise ValueError(
+                f"Unknown precision '{precision}'. Supported: {SUPPORTED_PRECISIONS}"
+            )
+
+        base = self.analyze_function(fn, include_composite=False)
+        prec_model = PrecisionAccuracyModel()
+        adj = prec_model.adjust_metrics(base, precision, base_precision="FP64")
+
+        result = adj.adjusted_metrics.copy()
+        result["PRECISION"] = precision
+        result.update(adj.accuracy_info)
+
+        if include_composite:
+            result = self.composite_calculator.calculate_composite_score(result)
+
+        return result
+
+    def compare_precisions(
+        self,
+        fn: Callable[..., Any],
+        precisions: Optional[List[str]] = None,
+        include_composite: bool = True,
+    ) -> Dict[str, Any]:
+        """
+        Run *fn* analysis once, then project costs to every precision in
+        *precisions* and return a side-by-side comparison.
+
+        Args:
+            fn:                Python callable to analyse.
+            precisions:        List of precision names to compare.
+                               Defaults to all supported precisions.
+            include_composite: Whether to include composite score columns.
+
+        Returns:
+            Dict with keys:
+              ``"base_metrics"``   — raw FP64-equivalent metrics,
+              ``"by_precision"``   — per-precision adjusted metrics,
+              ``"tradeoff_table"`` — list of comparison-row dicts,
+              ``"best_for_performance"`` — precision with lowest CU,
+              ``"best_for_energy"``      — precision with lowest EU,
+              ``"best_balanced"``        — precision with best composite
+                                           score (if include_composite).
+        """
+        if precisions is None:
+            precisions = SUPPORTED_PRECISIONS
+
+        base = self.analyze_function(fn, include_composite=False)
+        prec_model = PrecisionAccuracyModel()
+        table = prec_model.build_tradeoff_table(base, base_precision="FP64")
+
+        by_precision: Dict[str, Dict] = {}
+        for precision in precisions:
+            if precision not in SUPPORTED_PRECISIONS:
+                continue
+            result = self.analyze_function_with_precision(fn, precision, include_composite)
+            by_precision[precision] = result
+
+        best_perf = min(by_precision, key=lambda p: by_precision[p].get("CU", float("inf")))
+        best_energy = min(by_precision, key=lambda p: by_precision[p].get("EU", float("inf")))
+        best_balanced = None
+        if include_composite:
+            best_balanced = max(
+                by_precision,
+                key=lambda p: by_precision[p].get("COMPOSITE_SCORE", 0.0),
+            )
+
+        return {
+            "base_metrics":          base,
+            "by_precision":          by_precision,
+            "tradeoff_table":        table,
+            "best_for_performance":  best_perf,
+            "best_for_energy":       best_energy,
+            "best_balanced":         best_balanced,
+        }
+
+    def analyze_ptx_with_precision(
+        self,
+        ptx_path: str,
+        precision: Optional[str] = None,
+        include_composite: bool = True,
+    ) -> Dict[str, float]:
+        """
+        Analyse a PTX file with optional explicit precision override.
+
+        If *precision* is None the analyzer auto-detects precision from
+        instruction name suffixes (e.g. ``MUL.F16``).  An explicit value
+        overrides the auto-detection for instructions without a suffix.
+
+        Args:
+            ptx_path:          Path to the PTX source file.
+            precision:         Optional explicit precision ('FP64' … 'INT8').
+            include_composite: Whether to append composite score fields.
+
+        Returns:
+            Standard metrics dict, optionally with composite score fields.
+        """
+        summary = {"CU": 0.0, "EU": 0.0, "CO2": 0.0, "$": 0.0}
+
+        with open(ptx_path, "r", encoding="utf-8") as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith((";", "//", ".", "{")):
+                    continue
+                tokens = line.split()
+                if tokens:
+                    instr = tokens[0].upper().rstrip(":")
+                    if not instr.endswith(":") and not instr.startswith("."):
+                        cu, eu, co2, money = self.model.get_cost(
+                            instr, precision=precision
+                        )
+                        summary["CU"]  += cu
+                        summary["EU"]  += eu
+                        summary["CO2"] += co2
+                        summary["$"]   += money
+
+        if precision:
+            summary["PRECISION"] = precision
+
+        if include_composite:
+            summary = self.composite_calculator.calculate_composite_score(summary)
+
+        return summary

@@ -38,7 +38,6 @@ import dis
 import platform
 import json
 import os
-import subprocess
 import requests
 from typing import Dict, Tuple
 import csv

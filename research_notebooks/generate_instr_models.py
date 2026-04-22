@@ -1,4 +1,5 @@
-import os, json
+import os
+import json
 
 MODELS = {
     "x86": "x86_instr_costs.json",

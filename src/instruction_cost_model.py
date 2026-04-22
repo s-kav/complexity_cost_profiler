@@ -1,11 +1,31 @@
-# instruction_cost_model.py
+# complexity_cost_profiler/src/instruction_cost_model.py
 
 import os
 import json
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 # The path constant now lives with the class that uses it.
 DEFAULT_COST_MODEL_PATH = "./cost_models"
+
+# Precision suffix tags embedded in PTX instruction names (e.g. "MUL.F16")
+_PRECISION_TAGS = {
+    "F64": "FP64",
+    "F32": "FP32",
+    "F16": "FP16",
+    "BF16": "BF16",
+    "S8":  "INT8",
+    "U8":  "INT8",
+}
+
+# Per-precision CU/EU/CO2/$ multipliers relative to FP64 baseline.
+# Source: NVIDIA A100 SXM4 throughput data.
+PRECISION_MULTIPLIERS: Dict[str, Dict[str, float]] = {
+    "FP64": {"CU": 1.0,    "EU": 1.0,   "CO2": 1.0,   "$": 1.0   },
+    "FP32": {"CU": 0.5,    "EU": 0.55,  "CO2": 0.55,  "$": 0.55  },
+    "BF16": {"CU": 0.125,  "EU": 0.20,  "CO2": 0.20,  "$": 0.20  },
+    "FP16": {"CU": 0.125,  "EU": 0.18,  "CO2": 0.18,  "$": 0.18  },
+    "INT8": {"CU": 0.0625, "EU": 0.10,  "CO2": 0.10,  "$": 0.10  },
+}
 
 class InstructionCostModel:
     """
@@ -99,7 +119,7 @@ class InstructionCostModel:
             'RETURN_VALUE': 'MOV'
         }
 
-    def get_cost(self, opname: str, is_bytecode: bool = False) -> Tuple[float, float, float, float]:
+    def get_cost1(self, opname: str, is_bytecode: bool = False) -> Tuple[float, float, float, float]:
         """
         Get cost metrics for specified instruction.
 
@@ -127,4 +147,70 @@ class InstructionCostModel:
             data.get("CO2", 0.00005),
             data.get("$", 0.00001)
         )
-        
+    def get_cost(self, opname: str, is_bytecode: bool = False,
+                 precision: Optional[str] = None) -> Tuple[float, float, float, float]:
+        """
+        Get cost metrics for specified instruction.
+
+        Args:
+            opname:      Instruction operation name.
+            is_bytecode: Whether the opname is a Python bytecode instruction.
+            precision:   Optional precision override ('FP64', 'FP32', 'BF16',
+                         'FP16', 'INT8').  When provided, the base cost is
+                         multiplied by the corresponding precision factor.
+                         If the instruction name already encodes a precision
+                         suffix (e.g. ``MUL.F16``) the suffix takes precedence
+                         over this argument.
+
+        Returns:
+            Tuple of (CU, EU, CO2, $) cost values.
+        """
+        opname = opname.upper()
+
+        if is_bytecode and opname in self.bytecode_mapping:
+            opname = self.bytecode_mapping[opname]
+
+        data = self.weights.get(opname)
+
+        if data is None:
+            default_values = {"CU": 1.0, "EU": 0.0001, "CO2": 0.00005, "$": 0.00001}
+            cu, eu, co2, usd = (default_values["CU"], default_values["EU"],
+                                default_values["CO2"], default_values["$"])
+        else:
+            cu  = data.get("CU",  1.0)
+            eu  = data.get("EU",  0.0001)
+            co2 = data.get("CO2", 0.00005)
+            usd = data.get("$",   0.00001)
+
+        # Detect precision from the instruction suffix (e.g. "MUL.F16" → "FP16")
+        detected = self._detect_precision_from_opname(opname)
+        effective_precision = detected or precision
+
+        if effective_precision and effective_precision in PRECISION_MULTIPLIERS:
+            mults = PRECISION_MULTIPLIERS[effective_precision]
+            cu  *= mults["CU"]
+            eu  *= mults["EU"]
+            co2 *= mults["CO2"]
+            usd *= mults["$"]
+
+        return (cu, eu, co2, usd)
+
+
+    @staticmethod
+    def _detect_precision_from_opname(opname: str) -> Optional[str]:
+        """Return precision string if the opname contains a known precision tag."""
+        for tag, precision in _PRECISION_TAGS.items():
+            if f".{tag}" in opname or opname.endswith(tag):
+                return precision
+        return None
+
+
+    def get_precision_multipliers(self, precision: str) -> Dict[str, float]:
+        """Return the raw CU/EU/CO2/$ multipliers for a given precision."""
+        if precision not in PRECISION_MULTIPLIERS:
+            raise ValueError(f"Unknown precision '{precision}'. Supported: {list(PRECISION_MULTIPLIERS)}")
+        return PRECISION_MULTIPLIERS[precision].copy()
+
+
+
+

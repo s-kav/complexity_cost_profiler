@@ -74,15 +74,30 @@
         "CO2": "Environment is important, but not critical",
         "$": "Cost is less important"
       }
+    },
+    "mixed_precision": {
+      "description": "Mixed-Precision HPC — balances throughput gains against energy and accuracy cost. Suitable for selecting optimal precision format (FP64/FP32/FP16/INT8) for a given task.",
+      "weights": {
+        "CU": 0.40,
+        "EU": 0.35,
+        "CO2": 0.15,
+        "$": 0.10
+      },
+      "comments": {
+        "CU": "Throughput is critical — higher precision → higher CU cost",
+        "EU": "Energy strongly differentiates precision formats",
+        "CO2": "Carbon footprint scales with energy",
+        "$": "Cloud cost matters but is secondary to performance/energy"
+      }
     }
   },
   "reference_values": {
     "description": "Reference values for normalization (can be calibrated based on benchmark suite)",
     "values": {
-      "CU": {"min": 1.0, "max": 1000.0, "typical": 100.0},
-      "EU": {"min": 0.0001, "max": 10.0, "typical": 1.0},
-      "CO2": {"min": 0.00001, "max": 1.0, "typical": 0.1},
-      "$": {"min": 0.000001, "max": 0.1, "typical": 0.01}
+      "CU":  {"min": 1.0,     "max": 1000.0,  "typical": 100.0 },
+      "EU":  {"min": 0.0001,  "max": 10.0,    "typical": 1.0   },
+      "CO2": {"min": 0.00001, "max": 1.0,     "typical": 0.1   },
+      "$":   {"min": 0.000001,"max": 0.1,     "typical": 0.01  }
     }
   }
 }

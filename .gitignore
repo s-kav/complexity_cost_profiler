@@ -1,0 +1,54 @@
+# Poetry Virtual Environment
+.venv/
+venv/
+env/
+
+# Python Caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Directories with Data / Large Files
+data/
+temp/
+uploads/
+downloads/
+# *.csv
+# *.xlsx
+# *.json
+# !example.json # if you need to save examples
+
+# Logs
+logs/
+*.log
+
+# Sensitive Files
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.crt
+*.secret
+
+# IDE and Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation directories (if you don't want to push)
+# documentation/ # uncomment if you don't want to push documentation
+
+# Build/distribution directories
+dist/
+build/
+*.egg-info/
+
+# uv
+# uv.lock # uncomment if you don't want to push the lock file

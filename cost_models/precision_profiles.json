@@ -1,0 +1,123 @@
+{
+  "description": "Per-precision cost multipliers and accuracy specs. Throughput data based on NVIDIA A100 GPU (SXM4). IEEE 754 standard for accuracy bounds.",
+  "precisions": {
+    "FP64": {
+      "full_name": "Double Precision Float",
+      "total_bits": 64,
+      "mantissa_bits": 52,
+      "exponent_bits": 11,
+      "machine_epsilon": 2.22e-16,
+      "max_relative_error": 1.11e-16,
+      "dynamic_range_decades": 307,
+      "throughput_multiplier_cuda": 1.0,
+      "throughput_multiplier_tensor": 2.0,
+      "cu_multiplier": 1.0,
+      "eu_multiplier": 1.0,
+      "co2_multiplier": 1.0,
+      "cost_multiplier": 1.0,
+      "typical_use": "Scientific computing, CFD, climate simulation, financial modeling"
+    },
+    "FP32": {
+      "full_name": "Single Precision Float",
+      "total_bits": 32,
+      "mantissa_bits": 23,
+      "exponent_bits": 8,
+      "machine_epsilon": 1.19e-7,
+      "max_relative_error": 5.96e-8,
+      "dynamic_range_decades": 38,
+      "throughput_multiplier_cuda": 2.0,
+      "throughput_multiplier_tensor": 16.0,
+      "cu_multiplier": 0.5,
+      "eu_multiplier": 0.55,
+      "co2_multiplier": 0.55,
+      "cost_multiplier": 0.55,
+      "typical_use": "General HPC, deep learning (non-tensor), graphics, OpenFOAM"
+    },
+    "BF16": {
+      "full_name": "Brain Float 16",
+      "total_bits": 16,
+      "mantissa_bits": 7,
+      "exponent_bits": 8,
+      "machine_epsilon": 7.81e-3,
+      "max_relative_error": 3.91e-3,
+      "dynamic_range_decades": 38,
+      "throughput_multiplier_cuda": 32.0,
+      "throughput_multiplier_tensor": 32.0,
+      "cu_multiplier": 0.125,
+      "eu_multiplier": 0.20,
+      "co2_multiplier": 0.20,
+      "cost_multiplier": 0.20,
+      "typical_use": "DL training (preferred over FP16: same dynamic range as FP32)"
+    },
+    "FP16": {
+      "full_name": "Half Precision Float",
+      "total_bits": 16,
+      "mantissa_bits": 10,
+      "exponent_bits": 5,
+      "machine_epsilon": 9.77e-4,
+      "max_relative_error": 4.88e-4,
+      "dynamic_range_decades": 4,
+      "throughput_multiplier_cuda": 32.0,
+      "throughput_multiplier_tensor": 32.0,
+      "cu_multiplier": 0.125,
+      "eu_multiplier": 0.18,
+      "co2_multiplier": 0.18,
+      "cost_multiplier": 0.18,
+      "typical_use": "Neural network training/inference, mixed-precision ML (requires loss scaling)"
+    },
+    "INT8": {
+      "full_name": "8-bit Integer",
+      "total_bits": 8,
+      "mantissa_bits": 0,
+      "exponent_bits": 0,
+      "machine_epsilon": 1.0,
+      "max_relative_error": 0.004,
+      "dynamic_range_decades": 2.3,
+      "throughput_multiplier_cuda": 64.0,
+      "throughput_multiplier_tensor": 64.0,
+      "cu_multiplier": 0.0625,
+      "eu_multiplier": 0.10,
+      "co2_multiplier": 0.10,
+      "cost_multiplier": 0.10,
+      "typical_use": "Inference-only, post-training quantization, edge deployment"
+    }
+  },
+  "task_accuracy_requirements": {
+    "climate_simulation":      { "min_precision": "FP64", "justification": "Accumulation errors over thousands of timesteps require FP64" },
+    "molecular_dynamics":      { "min_precision": "FP64", "justification": "Energy conservation laws require FP64" },
+    "financial_modeling":      { "min_precision": "FP64", "justification": "Regulatory accuracy requirements mandate FP64" },
+    "linear_algebra_direct":   { "min_precision": "FP64", "justification": "Direct solvers accumulate rounding errors (LU, Cholesky)" },
+    "iterative_solver":        { "min_precision": "FP32", "justification": "Mixed-precision iterative refinement converges with FP32 base" },
+    "general_scientific":      { "min_precision": "FP32", "justification": "Most HPC workloads acceptable with FP32" },
+    "signal_processing_fft":   { "min_precision": "FP32", "justification": "FFT at FP32 sufficient for most signal analysis" },
+    "deep_learning_training":  { "min_precision": "FP16", "justification": "Mixed precision with loss scaling is standard practice" },
+    "dl_inference":            { "min_precision": "INT8", "justification": "Post-training quantization typically works well" },
+    "computer_vision":         { "min_precision": "FP16", "justification": "ResNet/ViT proven accurate at FP16/BF16" },
+    "nlp_llm":                 { "min_precision": "BF16", "justification": "Large dynamic range needed for gradient stability" },
+    "recommendation_systems":  { "min_precision": "INT8", "justification": "Embedding lookup tolerates quantization noise" }
+  },
+  "gpu_instruction_costs_by_precision": {
+    "description": "NVIDIA A100 FP throughput scaling. CU/EU baseline = FP64 CUDA cores.",
+    "MUL": {
+      "FP64": { "CU": 4.0,  "EU": 0.0004, "CO2": 0.000111, "$": 0.00004 },
+      "FP32": { "CU": 2.0,  "EU": 0.00022, "CO2": 0.000061, "$": 0.000022 },
+      "BF16": { "CU": 0.5,  "EU": 0.00008, "CO2": 0.000022, "$": 0.000008 },
+      "FP16": { "CU": 0.5,  "EU": 0.000072, "CO2": 0.00002, "$": 0.0000072 },
+      "INT8": { "CU": 0.25, "EU": 0.00004, "CO2": 0.000011, "$": 0.000004 }
+    },
+    "ADD": {
+      "FP64": { "CU": 2.0,  "EU": 0.0002, "CO2": 0.0000556, "$": 0.00002 },
+      "FP32": { "CU": 1.0,  "EU": 0.00011, "CO2": 0.0000306, "$": 0.000011 },
+      "BF16": { "CU": 0.25, "EU": 0.00004, "CO2": 0.0000111, "$": 0.000004 },
+      "FP16": { "CU": 0.25, "EU": 0.000036, "CO2": 0.00001,  "$": 0.0000036 },
+      "INT8": { "CU": 0.125,"EU": 0.00002, "CO2": 0.0000056, "$": 0.000002 }
+    },
+    "FMA": {
+      "FP64": { "CU": 5.0,  "EU": 0.0005, "CO2": 0.000139, "$": 0.00005 },
+      "FP32": { "CU": 2.5,  "EU": 0.000275, "CO2": 0.0000764, "$": 0.0000275 },
+      "BF16": { "CU": 0.625,"EU": 0.0001, "CO2": 0.0000278, "$": 0.00001 },
+      "FP16": { "CU": 0.625,"EU": 0.00009, "CO2": 0.000025, "$": 0.000009 },
+      "INT8": { "CU": 0.3125,"EU": 0.00005,"CO2": 0.0000139,"$": 0.000005 }
+    }
+  }
+}
