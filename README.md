@@ -1,14 +1,14 @@
 
 # Complexity Cost Profiler
 
-CostComplexityProfiler: Advanced Algorithmic Complexity Assessment Model with Unified Composite Score.
-A sophisticated static analysis tool designed to evaluate the "cost" of software projects across multiple dimensions beyond traditional time complexity.
+CostComplexityProfiler: Advanced Algorithmic Complexity Assessment Model with Unified Composite Score and Mixed-Precision HPC Analysis.
+A sophisticated static analysis tool that evaluates the "cost" of software projects across multiple dimensions: computational effort, energy consumption, carbon footprint, and monetary cost — now extended with floating-point precision-accuracy tradeoff analysis and HPC library benchmarking.
 
 ## The Core Problem
 
-Traditional algorithm analysis, often limited to Big O notation, is abstract and fails to capture critical real-world operational costs. In modern software development, factors like energy consumption (for mobile/IoT), cloud infrastructure expenses, and environmental impact are crucial considerations.
+Traditional algorithm analysis, often limited to Big O notation, is abstract and fails to capture critical real-world operational costs. In modern HPC and machine-learning workloads, the choice of floating-point precision format (FP64, FP32, BF16, FP16, INT8) dramatically affects throughput, energy use, and numerical accuracy — yet most profilers treat all operations as equivalent.
 
-The **Complexity Cost Profiler** addresses this gap by providing a multi-faceted cost assessment, allowing developers and managers to make more informed decisions based on a holistic view of software efficiency.
+The **Complexity Cost Profiler** addresses this gap by providing a multi-faceted cost assessment that includes precision-aware hardware models, enabling developers and scientists to make data-driven decisions on the cost–accuracy–performance surface.
 
 ## Purpose 
 
@@ -16,21 +16,76 @@ This enhanced prototype implements a Python utility for evaluating computational
 
 ## Key Features
 
--   **Multi-Dimensional Analysis**: Evaluates code based on four key metrics:
-    -   **CU (Computational Units)**: Abstract measure of computational effort.
-    -   **EU (Energy Units)**: Estimated energy consumption.
-    -   **CO2 (CO2 Units)**: Estimated carbon footprint.
-    -   **$ (Monetary Units)**: Estimated monetary cost for execution (e.g., in a cloud environment).
--   **Composite Score**: Combines the four core metrics into a single, unified score (0-100) for easy, high-level comparison. A higher score indicates better overall efficiency.
--   **Analysis Profiles**: Applies different weighting schemes to the metrics, allowing for cost assessment tailored to specific deployment targets:
-    -   `HPC`: Prioritizes computational performance (CU).
-    -   `MOBILE`: Prioritizes energy efficiency (EU).
-    -   `COMMERCIAL`: Balances performance with monetary cost ($).
-    -   `RESEARCH`: Focuses on performance while being mindful of environmental impact.
-    -   `DEFAULT`: A balanced profile for general use.
+### Core Metrics (CU / EU / CO2 / $)
+ 
+| Metric | Description |
+|--------|-------------|
+| **CU** | Computational Units — abstract measure of computational effort |
+| **EU** | Energy Units — estimated energy consumption (Joules) |
+| **CO2** | Estimated carbon footprint (kg CO₂) |
+| **$ (Monetary Units)** | Estimated monetary cost (cloud billing) |
+
+### Composite Score
+
+Combines the four core metrics into a single, unified score (0-100) for easy, high-level comparison. A higher score indicates better overall efficiency.
+
+### Analysis Profiles
+
+Applies different weighting schemes to the metrics, allowing for cost assessment tailored to specific deployment targets.
+ 
+| Profile | Focus |
+|---------|-------|
+| `HPC` | Maximum (Prioritizes) computational throughput (CU weight 0.50) |
+| `MIXED_PRECISION` | Optimal precision selection — FP64/FP32/FP16/INT8 (CU 0.40, EU 0.35) |
+| `MOBILE` | Energy efficiency and battery life (EU weight 0.50) |
+| `COMMERCIAL` | Cost–performance balance with monetary cost ($ weight 0.30) |
+| `RESEARCH` | Performance with environmental awareness |
+| `DEFAULT` | Balanced general-purpose profile |
+
 -   **Automated Repository Analysis**: Can clone one or more Git repositories, automatically discover source files (`.py`, `.ll`, `.ptx`), and perform a comprehensive analysis.
 -   **Extensible Cost Models**: Instruction costs for different architectures (e.g., `x86_64`) are defined in simple JSON files, making the system easy to extend and calibrate.
 -   **Rich Visualizations**: Generates insightful charts to visually compare the efficiency of different algorithms or repositories.
+
+### Mixed-Precision Support (NEW)
+ 
+- Per-precision cost multipliers based on NVIDIA A100 SXM4 throughput data
+- IEEE 754 accuracy specs: machine epsilon, max relative error, dynamic range
+- Precision-accuracy tradeoff analysis: speedup, energy savings, accuracy loss factor
+- Task-specific precision recommendations (12 task types)
+- PTX instruction auto-detection of precision suffixes (`MUL.F16`, `FMA.F64`, …)
+### HPC Library Integration (NEW)
+ 
+- Benchmarks NumPy, SciPy, and CuPy (optional GPU) across operations:
+  `matrix_multiply`, `fft`, `linear_solve`, `svd`, `norm`
+- Measures wall-clock time → converts to CU/EU/CO2/$ via hardware model
+- CPU baseline: Intel Xeon Platinum 8380 (270 W, 2.4 TFLOP/s FP64)
+- GPU baseline: NVIDIA A100 SXM4 (400 W, 9.7 TFLOP/s FP64)
+- Composite scoring and library recommendation per operation
+### Publication-Quality Figures (NEW)
+ 
+Script `examples/publication_figures.py` generates 5 figures (PDF + PNG, 300 dpi) - see https://github.com/s-kav/complexity_cost_profiler/tree/main/figures:
+ 
+| Figure | Content |
+|--------|---------|
+| Fig. 1 | Pareto front: throughput speedup vs. accuracy loss (log–log) |
+| Fig. 2 | Relative resource savings by precision format (grouped bar chart) |
+| Fig. 3 | Composite efficiency score by precision format |
+| Fig. 4 | HPC library benchmark: elapsed time vs. problem size |
+| Fig. 5 | Task–precision compatibility heatmap |
+ 
+---
+ 
+## Supported Precision Formats
+ 
+| Format | Bits | Machine ε | Dynamic Range | Throughput vs FP64 | Typical Use |
+|--------|------|-----------|---------------|--------------------|-------------|
+| FP64 | 64 | 2.22×10⁻¹⁶ | 307 decades | 1× | Scientific computing, CFD, finance |
+| FP32 | 32 | 1.19×10⁻⁷ | 38 decades | 2× | General HPC, deep learning, OpenFOAM |
+| BF16 | 16 | 7.81×10⁻³ | 38 decades | 32× | DL training (preferred over FP16) |
+| FP16 | 16 | 9.77×10⁻⁴ | 4 decades | 32× | NN training/inference, mixed precision |
+| INT8 | 8 | — | 2.3 decades | 64× | Post-training quantization, inference |
+ 
+---
 
 ## How It Works
 
@@ -57,22 +112,31 @@ Let:
 
 #### Computational Units
 ```
-COST_total = ∑(op_i × w_i)       [in CU]
+COST_total = ∑(op_i × w_i)       [CU]
 ```
 
 #### Energy Consumption
 ```
-ENERGY_total = ∑(op_i × f_e(i))  [in Joules]
+ENERGY_total = ∑(op_i × f_e(i))  [Joules]
 ```
 
 #### Carbon Footprint
 ```
-CO2_total = ∑(op_i × f_c(i))     [in kg CO₂]
+CO2_total = ∑(op_i × f_c(i))     [kg CO₂]
 ```
 
 #### Monetary Cost
 ```
-MONEY_total = ∑(op_i × f_d(i))   [in $ or €]
+MONEY_total = ∑(op_i × f_d(i))   [$ or €]
+```
+
+### Precision Scaling
+ 
+```
+CU(p)  = CU(FP64)  × cu_multiplier(p)
+EU(p)  = EU(FP64)  × eu_multiplier(p)
+CO2(p) = CO2(FP64) × co2_multiplier(p)
+$(p)   = $(FP64)   × cost_multiplier(p)
 ```
 
 ### Composite Score Formula
@@ -83,6 +147,7 @@ Let `S_cu`, `S_eu`, `S_co2`, `S_$` be normalized scores (0-100) for each metric.
 Then:
 ```
 COMPOSITE_SCORE = α×S_cu + β×S_eu + γ×S_co2 + δ×S_$
+
 ```
 
 **Constraint:**
@@ -90,9 +155,159 @@ COMPOSITE_SCORE = α×S_cu + β×S_eu + γ×S_co2 + δ×S_$
 α + β + γ + δ = 1 (configurable weights)
 ```
 
+Weights `α, β, γ, δ` are profile-dependent and loaded from `cost_models/config_weights.json`.
 ---
 
 *Note: All weights (α, β, γ, δ) are user-configurable to prioritize different optimization objectives.*
+
+## Repository Structure
+ 
+```
+complexity_cost_profiler/
+├── src/
+│   ├── enhanced_cost_analyzer.py      # Main analyzer: Python / LLVM IR / PTX
+│   ├── instruction_cost_model.py      # Per-instruction cost lookup + precision multipliers
+│   ├── composite_score_calculator.py  # Composite scoring with profile weights
+│   ├── precision_accuracy_model.py    # NEW: FP64/FP32/BF16/FP16/INT8 tradeoff model
+│   ├── hpc_library_integration.py     # NEW: NumPy / SciPy / CuPy benchmarking
+│   ├── benchmark_algorithms.py
+│   ├── model_validator.py
+│   └── utils.py
+├── cost_models/
+│   ├── config_weights.json            # Profile weight definitions (incl. MIXED_PRECISION)
+│   ├── precision_profiles.json        # NEW: IEEE 754 specs + task accuracy requirements
+│   ├── gpu_ptx_instr_costs.json       # Extended: per-precision PTX instruction costs
+│   ├── x86_64_instr_costs.json
+│   └── arm_instr_costs.json
+├── examples/
+│   ├── hpc_precision_demo.py          # NEW: 6-section mixed-precision demo
+│   ├── publication_figures.py         # NEW: Publication-quality figure generator
+│   └── matrixMul_kernel_32.ptx        # Example PTX kernel
+├── figures/                           # NEW: Generated PDF/PNG figures
+├── research_notebooks/
+│   └── complexity_cost_profiler_v*.ipynb
+└── results/
+```
+ 
+---
+
+## Installation
+ 
+```bash
+uv add numpy scipy pandas matplotlib requests cupy-cuda12x jupyter ipykernel scikit-learn
+```
+ 
+> `cupy-cuda12x` requires an NVIDIA GPU with CUDA 12. Omit if running CPU-only.
+ 
+---
+
+### Run the HPC / Mixed-Precision Demo
+ 
+```bash
+PYTHONPATH=src python examples/hpc_precision_demo.py
+```
+ 
+Produces six output sections:
+1. Precision-accuracy tradeoff table (all formats vs FP64)
+2. Per-precision cost analysis of a dense matrix–vector product
+3. Pairwise precision comparisons with warnings
+4. Task-specific precision recommendations
+5. HPC library benchmark (NumPy / SciPy / CuPy)
+6. PTX precision analysis (if `examples/matrixMul_kernel_32.ptx` present)
+### Generate Publication Figures
+ 
+```bash
+PYTHONPATH=src python examples/publication_figures.py
+# Output: figures/fig{1..5}.pdf  and  figures/fig{1..5}.png
+```
+ 
+### Precision-Aware Function Analysis
+ 
+```python
+from enhanced_cost_analyzer import EnhancedCostAnalyzer
+from precision_accuracy_model import SUPPORTED_PRECISIONS
+ 
+analyzer = EnhancedCostAnalyzer(arch="x86_64", profile="MIXED_PRECISION")
+ 
+def my_hpc_kernel():
+    ...
+ 
+# Compare all precision formats
+comparison = analyzer.compare_precisions(my_hpc_kernel, precisions=SUPPORTED_PRECISIONS)
+print(comparison["best_for_performance"])   # e.g. "INT8"
+print(comparison["best_balanced"])          # e.g. "FP32"
+```
+ 
+### Task-Specific Precision Recommendation
+ 
+```python
+from precision_accuracy_model import PrecisionAccuracyModel
+ 
+model = PrecisionAccuracyModel()
+base  = {"CU": 500.0, "EU": 5.0, "CO2": 0.000384, "$": 0.002}
+ 
+candidates = model.recommend_precision(base, task_type="iterative_solver")
+for prec, adj in sorted(candidates.items(), key=lambda kv: kv[1].adjusted_metrics["CU"]):
+    print(f"{prec}: CU={adj.adjusted_metrics['CU']:.2f}  ε={adj.accuracy_info['machine_epsilon']:.2e}")
+```
+ 
+### HPC Library Benchmarking
+ 
+```python
+from hpc_library_integration import HPCLibraryProfiler
+ 
+profiler = HPCLibraryProfiler(sizes=[64, 128, 256], precisions=["FP64", "FP32"], repeats=5)
+results  = profiler.profile_all(operations=["matrix_multiply", "fft"])
+ 
+best = profiler.recommend_library(operation="matrix_multiply", size=128)
+print(f"Best: {best['library']} / {best['precision']}  score={best['composite_score']:.1f}")
+```
+ 
+### Multi-Repository Analysis (Notebook)
+ 
+```python
+from enhanced_cost_analyzer import EnhancedCostAnalyzer
+import utils as u, platform
+ 
+analyzer = EnhancedCostAnalyzer(arch=platform.machine().lower(), profile="RESEARCH")
+ 
+REPO_URLS = [
+    "https://github.com/s-kav/ds_tools.git",
+    # ...
+]
+ 
+for repo_url in REPO_URLS:
+    repo_path = repo_url.split("/")[-1].replace(".git", "")
+    df = u.analyze_repository(repo_path=repo_path, detected_arch=platform.machine().lower())
+    print(df)
+```
+
+---
+
+### Repository Assessment
+ 
+| PROFILE NAME | COMPOSITE_SCORE | SCORE_GRADE | CU | EU | CO2 | $ |
+|:---|:---|:---|:---|:---|:---|:---|
+| RESEARCH | 42.23 | D | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| MOBILE | 53.76 | C- | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+| HPC | 36.00 | F | 12,607 | 1.1194 | 0.3763 | 0.1261 |
+ 
+---
+
+ 
+## Example Output
+ 
+### Precision-Accuracy Tradeoff Table
+ 
+```
+Precision   Bits   Speedup  Enrg saved%  CO2 saved%  Acc loss ×   Machine ε
+FP64          64      1.0          0.0         0.0         1.0   2.22e-16
+FP32          32      2.0         45.0        45.0         0.5   1.19e-07
+BF16          16      8.0         80.0        80.0     35000.2   7.81e-03
+FP16          16      8.0         82.0        82.0      4396.4   9.77e-04
+INT8           8     16.0         90.0        90.0     36036.0   1.00e+00
+```
+
 
 ## Usage Examples
 
@@ -354,23 +569,26 @@ else:
 ![Pre-selected algorithms Comparison Chart](./results/Cubic_On3_TripleLoops_vs_Constant_O1_Formula.png)
 
 
-# References
-
-For citing you should use:
-
+## References
+ 
+For citing please use:
+ 
 Sergii Kavun. (2025). s-kav/complexity_cost_profiler: version 1.0 (v.1.0). Zenodo. https://doi.org/10.5281/zenodo.16761183
-
+ 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16761183.svg)](https://doi.org/10.5281/zenodo.16761183)
-
-
-# License
-
-This project is licensed under the Apache-2.0 license - see the [LICENSE](https://github.com/s-kav/complexity_cost_profiler/blob/main/LICENSE) file for details.
-
-
+ 
+---
+ 
+## License
+ 
+This project is licensed under the Apache-2.0 license — see the [LICENSE](https://github.com/s-kav/complexity_cost_profiler/blob/main/LICENSE) file for details.
+ 
+---
+ 
 ## Future Roadmap
-
--   **CI/CD Integration**: Develop a GitHub Action to run the profiler on pull requests and report on potential efficiency regressions.
--   **Expanded Language Support**: Add analyzers for other languages like C++, Java, and JavaScript.
--   **Hardware-Based Calibration**: Create tools to generate more accurate cost models by profiling instruction costs on real hardware.
--   **Web Dashboard**: Build a web-based UI to visualize historical analysis data and track project efficiency over time.
+ 
+- **CI/CD Integration**: GitHub Action to report efficiency regressions on pull requests
+- **Expanded Language Support**: C++, Java, JavaScript analyzers
+- **Hardware-Based Calibration**: Generate accurate cost models by profiling on real hardware
+- **Web Dashboard**: Visualise historical analysis data and track project efficiency over time
+- **Extended Precision Formats**: FP8 (E4M3 / E5M2) support for next-generation AI accelerators

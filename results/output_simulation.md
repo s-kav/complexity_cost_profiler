@@ -185,22 +185,35 @@ FP16      211.7500    0.024712    89.08  A
 Demo complete.
 ======================================================================
 
-
 ## New files (4 files)
 
 | File | Description |
 | :--- | :--- |
-| `cost_models/precision_profiles.json` | Спеки точности: multipliers для CU/EU/CO2/$, machine epsilon, dynamic range для FP64/FP32/BF16/FP16/INT8. Основа — NVIDIA A100 + IEEE 754 |
-| `src/precision_accuracy_model.py` | Модуль анализа трейдоффов: `adjust_metrics()`, `compare_precisions()`, `build_tradeoff_table()`, `recommend_precision()` |
-| `src/hpc_library_integration.py` | `HPCLibraryProfiler` — бенчмарки GEMM/FFT/solve/SVD/norm для NumPy/SciPy/CuPy с маппингом `elapsed` → CU/EU/CO2/$ |
-| `examples/hpc_precision_demo.py` | Демо-скрипт: 6 секций, показывает трейдофф-таблицы, анализ функций по точности, сравнение библиотек, PTX |
+| `cost_models/precision_profiles.json` | Precision Specs: multipliers для CU/EU/CO2/$, machine epsilon, dynamic range для FP64/FP32/BF16/FP16/INT8. Основа — NVIDIA A100 + IEEE 754 |
+| `src/precision_accuracy_model.py` | Tradeoff Analysis Module: `adjust_metrics()`, `compare_precisions()`, `build_tradeoff_table()`, `recommend_precision()` |
+| `src/hpc_library_integration.py` | `HPCLibraryProfiler` — benchmarks GEMM/FFT/solve/SVD/norm для NumPy/SciPy/CuPy with mapping `elapsed` → CU/EU/CO2/$ |
+| `examples/hpc_precision_demo.py` | Demo script: 6 sections, shows tradeoff tables, analysis of functions by accuracy, comparison of libraries, PTX |
 
 ## Changed files (5 files)
 
 | File | Changes |
 | :--- | :--- |
-| `cost_models/gpu_ptx_instr_costs.json` | Добавлены инструкции для всех форматов: ADD.F64/F32/F16, MUL.F64/F32/F16, FMA.\*, HMMA.F16, DP4A, IMAD.S8, LD/ST.GLOBAL.F64/F32/F16 |
-| `cost_models/config_weights.json` | Добавлен профиль `mixed_precision` (CU=0.40, EU=0.35, CO2=0.15, $=0.10) |
-| `src/instruction_cost_model.py` | Добавлены `PRECISION_MULTIPLIERS`, параметр `precision=` в `get_cost()`, автодетект формата из суффикса PTX-инструкции (MUL.F16 → FP16), метод `get_precision_multipliers()` |
-| `src/enhanced_cost_analyzer.py` | 3 новых метода: `analyze_function_with_precision()`, `compare_precisions()`, `analyze_ptx_with_precision()` |
-| `src/composite_score_calculator.py` | Экспортирован профиль `MIXED_PRECISION` в `PROFILE_WEIGHTS`, обновлены `load_configuration()` и `WeightConfiguration` |
+| `cost_models/gpu_ptx_instr_costs.json` | Added instructions for all formats: ADD.F64/F32/F16, MUL.F64/F32/F16, FMA.\*, HMMA.F16, DP4A, IMAD.S8, LD/ST.GLOBAL.F64/F32/F16 |
+| `cost_models/config_weights.json` | Profile added `mixed_precision` (CU=0.40, EU=0.35, CO2=0.15, $=0.10) |
+| `src/instruction_cost_model.py` | Added `PRECISION_MULTIPLIERS`, parameter `precision=` в `get_cost()`, autodetect format from PTX instruction suffix (MUL.F16 → FP16), method `get_precision_multipliers()` |
+| `src/enhanced_cost_analyzer.py` | 3 new methods: `analyze_function_with_precision()`, `compare_precisions()`, `analyze_ptx_with_precision()` |
+| `src/composite_score_calculator.py` | Profile exported `MIXED_PRECISION` in `PROFILE_WEIGHTS`, updated `load_configuration()` и `WeightConfiguration` |
+
+======================================================================
+
+What was generated:
+
+| File | Description |
+| :--- | :--- |
+| `fig1_pareto_front` | Pareto front: speedup vs. accuracy loss (log-log scatter) |
+| `fig2_cost_reduction` | Grouped bar chart: Energy/CO₂/$ savings by precision format |
+| `fig3_composite_score` | Composite efficiency score by precision format (with grades A+ … F) |
+| `fig4_library_benchmark` | Execution time of GEMM and FFT vs. problem size (NumPy/SciPy) |
+| `fig5_task_heatmap` | Task × precision compatibility heatmap |
+
+======================================================================
